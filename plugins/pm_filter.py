@@ -116,6 +116,12 @@ async def next_page(bot, query):
             ]
             for file in files
         ]
+    btn.insert(0, 
+        [
+            InlineKeyboardButton("❗️ ʟᴀɴɢᴜᴀɢᴇs ❗️", callback_data=f"select_lang#{req}"),
+            InlineKeyboardButton(f'⌗ Iɴꜰᴏ', 'reqinfo')
+        ]
+    )
     
 
     if 0 < offset <= 10:
@@ -177,6 +183,108 @@ async def advantage_spoll_choker(bot, query):
             await asyncio.sleep(25)
             await k.delete()
 
+
+@Client.on_callback_query(filters.regex(r"^lang"))
+async def language_check(bot, query):
+    _, userid, language = query.data.split("#")
+    if int(userid) not in [query.from_user.id, 0]:
+        return await query.answer(script.ALRT_TXT.format(query.from_user.first_name), show_alert=True)
+    if language == "unknown":
+        return await query.answer("Sᴇʟᴇᴄᴛ ᴀɴʏ ʟᴀɴɢᴜᴀɢᴇ ғʀᴏᴍ ᴛʜᴇ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴs !", show_alert=True)
+    movie = temp.KEYWORD.get(query.from_user.id)
+    if not movie:
+        return await query.answer(script.OLD_ALRT_TXT.format(query.from_user.first_name), show_alert=True)
+    if language != "home":
+        movie = f"{movie} {language}"
+    files, offset, total_results = await get_search_results(query.message.chat.id, movie, offset=0, filter=True)
+    if files:
+        settings = await get_settings(query.message.chat.id)
+        pre = 'filep' if settings['file_secure'] else 'file'       
+        elif settings['button']:
+            btn = [
+                [
+                    InlineKeyboardButton(
+                        text=f"📁 {get_size(file.file_size)} ➭ {file.file_name}", callback_data=f'{pre}#{file.file_id}'
+                    ),
+                ]
+                for file in files
+            ]
+        else:
+            btn = [
+                [
+                    InlineKeyboardButton(
+                        text=f"{file.file_name}",
+                        callback_data=f'{pre}#{file.file_id}',
+                    ),
+                    InlineKeyboardButton(
+                        text=f"{get_size(file.file_size)}",
+                        callback_data=f'{pre}#{file.file_id}',
+                    ),
+                ]              
+                for file in files
+            ]
+        btn.insert(0, 
+            [
+                InlineKeyboardButton("❗️ ʟᴀɴɢᴜᴀɢᴇs ❗️", callback_data=f"select_lang#{req}"),
+                InlineKeyboardButton(f'⌗ Iɴꜰᴏ', 'reqinfo')
+            ]
+        )                               
+        if offset != "":
+            key = f"{query.message.chat.id}-{query.message.id}"
+            BUTTONS[key] = movie
+            req = userid
+            btn.append(
+                [InlineKeyboardButton(text=f"〄 1/{math.ceil(int(total_results) / 10)}", callback_data="pages"),
+                 InlineKeyboardButton(text="Nᴇxᴛ​ ​⇛", callback_data=f"next_{req}_{key}_{offset}")]
+            )
+            except KeyError:
+                await save_group_settings(query.message.chat.id, 'max_btn', True)
+                btn.append(
+                    [InlineKeyboardButton(text="ɴᴇxᴛ​⇛",callback_data=f"next_{req}_{key}_{offset}")]
+                )
+        else:
+            btn.append(
+                [InlineKeyboardButton(text="🖇 ɴᴏ ᴍᴏʀᴇ ᴘᴀɢᴇs ᴀᴠᴀɪʟᴀʙʟᴇ 🖇",callback_data="pages")]
+            )
+        try:
+            await query.edit_message_reply_markup(
+                reply_markup=InlineKeyboardMarkup(btn)
+            )
+        except MessageNotModified:
+            pass
+        await query.answer()
+    else:
+        return await query.answer(f"Sᴏʀʀʏ, Nᴏ ғɪʟᴇs ғᴏᴜɴᴅ ғᴏʀ ʏᴏᴜʀ ᴏ̨ᴜᴇʀʏ {movie}.", show_alert=True)
+    
+@Client.on_callback_query(filters.regex(r"^select_lang"))
+async def select_language(bot, query):
+    _, userid = query.data.split("#")
+    if int(userid) not in [query.from_user.id, 0]:
+        return await query.answer(script.ALRT_TXT.format(query.from_user.first_name), show_alert=True)
+    btn = [[
+        InlineKeyboardButton("Sᴇʟᴇᴄᴛ Yᴏᴜʀ Dᴇꜱɪʀᴇᴅ Lᴀɴɢᴜᴀɢᴇ ↓", callback_data=f"lang#{userid}#unknown")
+    ],[
+        InlineKeyboardButton("Eɴɢʟɪꜱʜ", callback_data=f"lang#{userid}#eng"),
+        InlineKeyboardButton("Tᴀᴍɪʟ", callback_data=f"lang#{userid}#tam"),
+        InlineKeyboardButton("Hɪɴᴅɪ", callback_data=f"lang#{userid}#hin")
+    ],[
+        InlineKeyboardButton("Kᴀɴɴᴀᴅᴀ", callback_data=f"lang#{userid}#kan"),
+        InlineKeyboardButton("Tᴇʟᴜɢᴜ", callback_data=f"lang#{userid}#tel")
+    ],[
+        InlineKeyboardButton("Mᴀʟᴀʏᴀʟᴀᴍ", callback_data=f"lang#{userid}#mal")
+    ],[
+        InlineKeyboardButton("Mᴜʟᴛɪ Aᴜᴅɪᴏ", callback_data=f"lang#{userid}#multi"),
+        InlineKeyboardButton("Dᴜᴀʟ Aᴜᴅɪᴏ", callback_data=f"lang#{userid}#dual")
+    ],[
+        InlineKeyboardButton("Gᴏ Bᴀᴄᴋ", callback_data=f"lang#{userid}#home")
+    ]]
+    try:
+        await query.edit_message_reply_markup(
+            reply_markup=InlineKeyboardMarkup(btn)
+        )
+    except MessageNotModified:
+        pass
+    await query.answer()
 
 @Client.on_callback_query()
 async def cb_handler(client: Client, query: CallbackQuery):
@@ -571,7 +679,12 @@ async def auto_filter(client, msg, spoll=False):
             ]
             for file in files
         ]
-    
+    btn.insert(0, 
+        [
+            InlineKeyboardButton("❗️ ʟᴀɴɢᴜᴀɢᴇs ❗️", callback_data=f"select_lang#{req}"),
+            InlineKeyboardButton(f"⌗ Iɴꜰᴏ", "reqinfo")       
+        ]
+    )
 
     if offset != "":
         key = f"{message.chat.id}-{message.id}"
